@@ -95,7 +95,7 @@ const hubspotRequest = async (endpoint, method = 'GET', data = null) => {
 
 // Get the authorization URL
 app.get('/api/auth-url', (req, res) => {
-  const authUrl = `https://app.hubspot.com/oauth/authorize?client_id=${process.env.HUBSPOT_CLIENT_ID}&redirect_uri=${encodeURIComponent('http://localhost:5000/oauth-callback')}&scope=crm.objects.contacts.read%20crm.objects.contacts.write`;
+  const authUrl = `https://app.hubspot.com/oauth/authorize?client_id=${process.env.HUBSPOT_CLIENT_ID}&redirect_uri=${encodeURIComponent('process.env.REDIRECT_URL')}&scope=crm.objects.contacts.read%20crm.objects.contacts.write`;
   res.json({ authUrl });
 });
 
@@ -116,7 +116,7 @@ app.get('/oauth-callback', async (req, res) => {
       grant_type: 'authorization_code',
       client_id: process.env.HUBSPOT_CLIENT_ID,
       client_secret: process.env.HUBSPOT_CLIENT_SECRET,
-      redirect_uri: 'http://localhost:5000/oauth-callback',
+      redirect_uri: 'process.env.REDIRECT_URL',
       code
     }), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
@@ -128,10 +128,10 @@ app.get('/oauth-callback', async (req, res) => {
     tokens.expires_at = Date.now() + (data.expires_in * 1000);
 
     // Redirect to the frontend
-    res.redirect('http://localhost:3000?auth=success');
+    res.redirect('process.env.FRONTEND_URL');
   } catch (err) {
     console.error('OAuth callback error:', err.response?.data || err.message);
-    res.redirect('http://localhost:3000?auth=error');
+    res.redirect('process.env.REDIRECT_URL');
   }
 });
 
