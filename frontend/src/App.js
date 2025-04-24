@@ -104,7 +104,8 @@ function App() {
   const [isInitializing, setIsInitializing] = useState(false);
   const [initializationStatus, setInitializationStatus] = useState('');
 
-  const API_BASE_URL = 'http://localhost:5000/api';
+  // const API_BASE_URL = 'http://localhost:5000/api';
+  const API_BASE_URL = 'https://prostruct.onrender.com';
 
   useEffect(() => {
     fetchContacts();
