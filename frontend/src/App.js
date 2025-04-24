@@ -1,8 +1,8 @@
 // frontend/src/App.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Box, Container, Typography, FormControl, FormGroup, FormControlLabel, Checkbox, TextField, Paper, Button, Grid, Card, CardContent, IconButton, Chip, Divider } from '@mui/material';
+import { Box, Container, Typography, FormControl, FormGroup, FormControlLabel, Checkbox, TextField, Paper, Button, Grid, Card, CardContent, Chip } from '@mui/material';
 import L from 'leaflet';
 import axios from 'axios';
 import './App.css';
@@ -107,14 +107,6 @@ function App() {
   // const API_BASE_URL = 'http://localhost:5000/api';
   const API_BASE_URL = 'https://prostruct.onrender.com';
 
-  useEffect(() => {
-    fetchContacts();
-  }, []);
-
-  useEffect(() => {
-    updateSuggestedMatches();
-  }, [contacts, selectedRoles, locationFilter]);
-
   const fetchContacts = async () => {
     try {
       setLoading(true);
@@ -128,6 +120,45 @@ function App() {
       setLoading(false);
     }
   };
+
+  // Use useCallback to memoize the updateSuggestedMatches function
+  const updateSuggestedMatches = useCallback(() => {
+    const filteredContacts = contacts.filter(contact => {
+      // Filter by selected roles
+      const hasSelectedRole = contact.roles.some(role => selectedRoles[role]);
+      
+      // Filter by location
+      const matchesLocation = locationFilter === '' || 
+        contact.address.city.toLowerCase().includes(locationFilter) ||
+        contact.address.state.toLowerCase().includes(locationFilter) ||
+        contact.address.zip.toLowerCase().includes(locationFilter);
+      
+      return hasSelectedRole && matchesLocation;
+    });
+
+    // Create suggestions
+    const matches = filteredContacts.map(contact => {
+      const roles = contact.roles
+        .filter(role => selectedRoles[role])
+        .map(role => roleDisplayNames[role])
+        .join(' and ');
+      
+      return {
+        contact,
+        suggestion: `You can contact ${contact.name} in ${contact.address.city}, ${contact.address.state} as a ${roles}.`
+      };
+    });
+
+    setSuggestedMatches(matches);
+  }, [contacts, selectedRoles, locationFilter]);
+
+  useEffect(() => {
+    fetchContacts();
+  }, []);
+
+  useEffect(() => {
+    updateSuggestedMatches();
+  }, [contacts, selectedRoles, locationFilter, updateSuggestedMatches]);
 
   const handleInitialize = async () => {
     try {
@@ -160,36 +191,6 @@ function App() {
 
   const handleLocationFilterChange = (e) => {
     setLocationFilter(e.target.value.toLowerCase());
-  };
-
-  const updateSuggestedMatches = () => {
-    const filteredContacts = contacts.filter(contact => {
-      // Filter by selected roles
-      const hasSelectedRole = contact.roles.some(role => selectedRoles[role]);
-      
-      // Filter by location
-      const matchesLocation = locationFilter === '' || 
-        contact.address.city.toLowerCase().includes(locationFilter) ||
-        contact.address.state.toLowerCase().includes(locationFilter) ||
-        contact.address.zip.toLowerCase().includes(locationFilter);
-      
-      return hasSelectedRole && matchesLocation;
-    });
-
-    // Create suggestions
-    const matches = filteredContacts.map(contact => {
-      const roles = contact.roles
-        .filter(role => selectedRoles[role])
-        .map(role => roleDisplayNames[role])
-        .join(' and ');
-      
-      return {
-        contact,
-        suggestion: `You can contact ${contact.name} in ${contact.address.city}, ${contact.address.state} as a ${roles}.`
-      };
-    });
-
-    setSuggestedMatches(matches);
   };
 
   const filteredContacts = contacts.filter(contact => {
@@ -272,7 +273,6 @@ function App() {
                 variant="outlined"
                 size="small"
                 value={locationFilter}
-                // App.js (continued)
                 onChange={handleLocationFilterChange}
                 style={{ marginBottom: 16 }}
               />
